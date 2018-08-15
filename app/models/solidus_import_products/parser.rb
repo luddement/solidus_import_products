@@ -9,7 +9,5 @@ module SolidusImportProducts
     end
 
     module_function :parse
-
-    # Seguir arreglando esto apra arriba. PAra abajo aprece estar aunque un poco ams de test no vendiran mal
   end
 end

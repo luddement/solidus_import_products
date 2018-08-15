@@ -1,0 +1,30 @@
+sv:
+  product_import_processing: "Tack, din import är lagd i kön. Du kommer få en epostbekräftelse när importen är klar."
+  product_import_imported: "Produkter importerade ok"
+  product_imports: "Importera produkter"
+  delete_product_import: "Ta bort"
+  back_to_product_imports: "Tillbaka till importerade produkter"
+  delete_product_import_successful: "Importering och dess produkter togs bort ok"
+  confirm_delete_product_import: "Ta bort importen kommer ta bort dess produkter. Är du säker?"
+  product_import_http_error: "Ett fel uppstod. Se till att filen är sparad som en textfil."
+  show_product_import: "Importerade produkter"
+  spree:
+    admin:
+      tab:
+        product_imports: "Importera produkter"
+    actions:
+      import: "Import"
+  product_import:
+    state:
+      created: "Skapad"
+      uploaded: "Uppladdad"
+      started: "Behandlas"
+      completed: "Klar"
+      failed: "Fel"
+  form:
+    product_import:
+      separator_char: "Separator"
+      heading: "Importera produkter från csv"
+      encoding: "Encoding"
+      new:
+        data_file: "Textfil med produkter"
