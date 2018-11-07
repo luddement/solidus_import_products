@@ -7,6 +7,8 @@ module Spree
   class ProductImport < ActiveRecord::Base
     ENCODINGS = %w[UTF-8 iso-8859-1].freeze
 
+    has_one :product_import_data, dependent: :destroy, class_name: 'Spree::ProductImportData'
+
     has_attached_file :data_file,
                       path: ':rails_root/tmp/product_data/data-files/:basename_:timestamp.:extension',
                       url: ':rails_root/tmp/product_data/data-files/:basename_:timestamp.:extension'
@@ -17,10 +19,9 @@ module Spree
     # Content type of csv vary in different browsers.
     validates_attachment :data_file, presence: true, content_type: { content_type: ['text/csv', 'text/plain', 'text/comma-separated-values', 'application/octet-stream', 'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'] }
 
-    after_destroy :destroy_products
-
     serialize :product_ids, Array
     cattr_accessor :settings
+    attr_accessor :source
 
     state_machine initial: :created do
       event :start do
@@ -45,12 +46,60 @@ module Spree
       end
     end
 
-    def parse
-      @_parse ||= SolidusImportProducts::Parser.parse(:csv, data_file.url(:default, timestamp: false), { encoding_csv: encoding_csv, separator_char: separatorChar })
+    def product_import_source
+      Spree::Supplier.find(product_import_source_id)
     end
 
-    def products
-      Product.where(id: product_ids)
+    def items
+      # SolidusImportProducts::Parser.parse(:csv, data_file.url(:default, timestamp: false), { encoding_csv: encoding_csv, separator_char: separatorChar })
+      # start!
+
+      file = CGI::unescape(data_file.url(:default, timestamp: false))
+      supplier = product_import_source
+
+      csv_string = open(file, "r:#{supplier.import_encoding}").read.encode('utf-8')
+      rows = CSV.parse(csv_string, headers: true, col_sep: supplier.import_separator)
+      items = []
+      skus = []
+
+      rows.each do |row|
+        skus << row['sku']
+        regular_price = row['regular_price'].squish.gsub(' ','').to_i
+        sale_price = row['sale_price'].squish.gsub(' ','').to_i
+
+        price_diff = regular_price - sale_price
+        step = price_diff / 7
+
+        days = []
+        current_price = regular_price
+
+        6.times do
+          days << current_price
+          current_price = current_price - step
+        end
+
+        days << sale_price
+
+        items << {
+          variant: nil,
+          sku: row['sku'],
+          name: row['post_title'],
+          description: row['description'],
+          days: days,
+          images: row['images'].split(' | ')
+        }
+      end
+
+      variants = Spree::Variant.where(sku: skus).includes(:product).group_by(&:sku)
+      skus = variants.keys.to_set
+
+      items.each do |item|
+        if skus.include?(item[:sku])
+          item[:variant] = variants[item[:sku]]
+        end
+      end
+
+      items
     end
 
     def add_product(product)
@@ -63,10 +112,6 @@ module Spree
 
     def products_count
       parse.product_count
-    end
-
-    def destroy_products
-      products.destroy_all
     end
 
     def state_datetime

@@ -1,4 +1,5 @@
 sv:
+  product_import_created: "Tack, din import är skapad"
   product_import_processing: "Tack, din import är lagd i kön. Du kommer få en epostbekräftelse när importen är klar."
   product_import_imported: "Produkter importerade ok"
   product_imports: "Importera produkter"

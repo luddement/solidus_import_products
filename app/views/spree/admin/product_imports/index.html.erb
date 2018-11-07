@@ -8,24 +8,20 @@
   <fieldset class="no-border-top">
   <%= f.field_container :data_file, class: ['form-group'] do  %>
     <%= f.label :data_file, t('form.product_import.new.data_file') %><br />
-    <%= f.file_field :data_file %>
+    <%= f.file_field :data_file, required: true %>
     <%= f.error_message_on :data_file %>
   <% end %>
+
   <div class="field">
-    <%= f.label :separatorChar, t('form.product_import.separator_char') %><br />
-    <%= f.text_field :separatorChar, class: 'form-control required',:id =>  "separatorChar",:value => ";" ,:size => 1, :maxlength => 1 %>
-  </div>
-  <div class="field">
-    <%= f.label :encoding_csv, t('form.product_import.encoding') %><br />
-    <%= f.select(:encoding_csv,
-                   options_from_collection_for_select(Spree::ProductImport::ENCODINGS, :to_s, :to_s, 'UTF-8'),
+    <%= f.label :source, 'Leverantör' %><br />
+    <%= f.select(:product_import_source_id,
+                   options_from_collection_for_select(@sources.map{|source| [source.id, source.name] }, :first, :last, 'UTF-8'),
                    {:class => 'select2', :prompt => false}) %>
   </div>
   <div data-hook="buttons" class="form-actions">
     <%= button Spree.t('actions.import'), 'ok', 'submit', {class: 'btn-success'} %>
   </div>
-  </fieldset>
-
+  </fieldsetDatum
 <% end %>
 </div>
 </div>
@@ -41,24 +37,24 @@
   </colgroup>
   <thead>
   <tr>
-    <th>Date creation</th>
-    <th>CSV Name</th>
+    <th>Datum</th>
+    <th>Filnamn</th>
     <th>Status</th>
-    <th>Date Status</th>
-    <th>Imported</th>
-    <th>Error Message</th>
-    <th class="actions">Actions</th>
+    <th>Importerad</th>
+    <th>Produkter</th>
+    <th>Leverantör</th>
+    <th class="actions" colspan="2">Hantera</th>
   </tr>
   </thead>
   <tbody>
-  <% Spree::ProductImport.order("created_at DESC").all.each do |import| %>
+  <% @product_imports.each do |import| %>
     <tr class="<%= cycle('odd', 'even') %>" id="<%= dom_id import %>">
       <td><%= I18n.l(import.created_at.to_datetime,format: :short)%></td>
-      <td><%= link_to import.data_file_file_name, import.data_file.url -%></td>
+      <td><%= link_to import.data_file_file_name, admin_product_import_path(import) -%> <small><%= number_to_human_size(import.data_file_file_size).downcase %></small></td>
       <td><span class="label-<%= import.state.downcase %>"><%= t(import.state, :scope => "product_import.state")%></span></td>
-      <td><%= I18n.l(import.state_datetime.to_datetime,format: :short) %></td>
+      <td><%#= I18n.l(import.state_datetime.to_datetime,format: :short) %></td>
       <td><%= import.product_ids.size -%></td>
-      <td><%= import.error_message%></td>
+      <td><%= @suppliers[import.product_import_source_id].try(:name) %></td>
       <td class="actions text-center">
         <%= link_to_edit import, :url => admin_product_import_path(import), :no_text => true -%>
       </td>
@@ -69,3 +65,5 @@
   <% end %>
   </tbody>
 </table>
+
+<%= paginate @product_imports, theme: "solidus_admin" %>
